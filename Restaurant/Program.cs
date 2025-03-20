@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Restaurant
+namespace RestaurantReservation
 {
     internal class Program
     {
@@ -18,10 +18,10 @@ namespace Restaurant
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine("✨ Welcome to M.A.R.I.L.A.G Restaurant Reservation System ✨\n");
+                Console.WriteLine("✨ Welcome to the Restaurant Reservation System ✨\n");
                 Console.WriteLine("1. 🍽 View Packages");
-                Console.WriteLine("2. 📅 Make a Reservation (not implemented yet)");
-                Console.WriteLine("3. 📆 View Schedule (not implemented yet)");
+                Console.WriteLine("2. 📅 Make a Reservation");
+                Console.WriteLine("3. 📆 View Schedule");
                 Console.WriteLine("4. ❌ Exit");
                 Console.Write("\nSelect an option: ");
                 string input = Console.ReadLine();
@@ -113,16 +113,48 @@ namespace Restaurant
         static void StartReservation()
         {
             Console.Clear();
-            Console.WriteLine("📅 Make a Reservation is not yet finish.");
-            Console.WriteLine("\nPress any key to return to the main menu...");
+            Console.WriteLine("📅 Make a Reservation\n");
+
+            Console.Write("👤 Enter Your Name: ");
+            string name = Console.ReadLine();
+
+            Console.Write("📞 Enter Contact Number: ");
+            string contact = Console.ReadLine();
+
+            Console.Write("👥 Enter Number of Guests: ");
+            string guestInput = Console.ReadLine();
+            if (!int.TryParse(guestInput, out int guests))
+            {
+                Console.WriteLine("\nInvalid number for guests. Press any key to return to the main menu...");
+                Console.ReadKey();
+                return;
+            }
+
+
+            Console.Write("\nEnter Reservation Date (e.g. DD): ");
+            string dateInput = Console.ReadLine();
+
+
+            Console.WriteLine("\nReservation details captured:");
+            Console.WriteLine($"Name: {name}");
+            Console.WriteLine($"Contact: {contact}");
+            Console.WriteLine($"Guests: {guests}");
+            Console.WriteLine($"Date: {dateInput}");
+            Console.WriteLine("\nThis function is not yet fully implemented.");
+            Console.WriteLine("Press any key to return to the main menu...");
             Console.ReadKey();
         }
 
         static void ShowSchedule()
         {
             Console.Clear();
-            Console.WriteLine("📆 View Schedule is not yet finish.");
-            Console.WriteLine("\nPress any key to return to the main menu...");
+            Console.WriteLine("📆 View Schedule\n");
+
+            Console.Write("Enter Month (e.g. January): ");
+            string month = Console.ReadLine();
+
+            Console.WriteLine($"\nSchedule for {month} is not yet fully implemented.");
+            Console.WriteLine("Press any key to return to the main menu...");
             Console.ReadKey();
         }
     }
