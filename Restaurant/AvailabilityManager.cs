@@ -6,16 +6,16 @@ namespace RestaurantReservation
 {
     public class AvailabilityManager
     {
-        private readonly Random rand = new Random();
-        private readonly Dictionary<int, Dictionary<int, BookingStatus[]>> availability = new Dictionary<int, Dictionary<int, BookingStatus[]>>();
+        private  Random rand = new Random();
+        private  Dictionary<int, Dictionary<int, BookingStatus[]>> availability = new Dictionary<int, Dictionary<int, BookingStatus[]>>();
         public Dictionary<string, Reservation> BookedReservations = new Dictionary<string, Reservation>();
 
-        public static readonly string[] Months = {
+        public static string[] Months = {
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
         };
 
-        public static readonly string[] TimeSlots = {
+        public static string[] TimeSlots = {
             "1:00 PM", "5:00 PM", "9:00 PM", "1:00 AM", "5:00 AM", "9:00 AM"
         };
 
@@ -35,7 +35,10 @@ namespace RestaurantReservation
             if (availability.ContainsKey(monthIndex)) return;
 
             Dictionary<int, BookingStatus[]> days = new Dictionary<int, BookingStatus[]>();
-            for (int day = 1; day <= 30; day++)
+            int year = 2025;
+            int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
+
+            for (int day = 1; day <= daysInMonth; day++)
             {
                 BookingStatus[] slots = new BookingStatus[TimeSlots.Length];
                 for (int t = 0; t < TimeSlots.Length; t++)
@@ -65,6 +68,7 @@ namespace RestaurantReservation
             }
         }
 
+
         public int SelectMonth()
         {
             int selected = 0;
@@ -90,7 +94,10 @@ namespace RestaurantReservation
 
         public int SelectDate(int monthIndex)
         {
+            int year = 2025;
+            int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
             int selectedDay = 1;
+
             while (true)
             {
                 Console.Clear();
@@ -101,9 +108,9 @@ namespace RestaurantReservation
 
                 ConsoleKey key = Console.ReadKey(true).Key;
                 if (key == ConsoleKey.UpArrow && selectedDay > 1) selectedDay--;
-                else if (key == ConsoleKey.DownArrow && selectedDay < 30) selectedDay++;
+                else if (key == ConsoleKey.DownArrow && selectedDay < daysInMonth) selectedDay++;
                 else if (key == ConsoleKey.LeftArrow && selectedDay > 15) selectedDay -= 15;
-                else if (key == ConsoleKey.RightArrow && selectedDay <= 15) selectedDay += 15;
+                else if (key == ConsoleKey.RightArrow && selectedDay + 15 <= daysInMonth) selectedDay += 15;
                 else if (key == ConsoleKey.Escape) return -1;
                 else if (key == ConsoleKey.Enter) return selectedDay;
             }
@@ -112,15 +119,22 @@ namespace RestaurantReservation
 
         private void DrawCalendar(int monthIndex, int selectedDay)
         {
-            for (int row = 1; row <= 15; row++)
+            int year = 2025;
+            int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
+            int rows = (int)Math.Ceiling(daysInMonth / 2.0);
+
+            for (int row = 1; row <= rows; row++)
             {
                 int left = row;
-                int right = row + 15;
-                string leftStr = (left <= 30) ? FormatDay(monthIndex, left, selectedDay) : "";
-                string rightStr = (right <= 30) ? FormatDay(monthIndex, right, selectedDay) : "";
+                int right = row + rows;
+                string leftStr = (left <= daysInMonth) ? FormatDay(monthIndex, left, selectedDay) : "";
+                string rightStr = (right <= daysInMonth) ? FormatDay(monthIndex, right, selectedDay) : "";
                 Console.WriteLine(string.Format("{0,-20} {1}", leftStr, rightStr));
             }
         }
+
+
+
 
         private string FormatDay(int monthIndex, int day, int selected)
         {
@@ -249,6 +263,9 @@ namespace RestaurantReservation
 
                 InitializeMonth(monthIndex);
 
+                int year = 2025;
+                int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
+
                 while (true)
                 {
                     Console.Clear();
@@ -261,8 +278,8 @@ namespace RestaurantReservation
                         int left = row;
                         int right = row + 15;
 
-                        string leftStr = (left <= 30) ? FormatDateStatus(monthIndex, left) : "";
-                        string rightStr = (right <= 30) ? FormatDateStatus(monthIndex, right) : "";
+                        string leftStr = (left <= daysInMonth) ? FormatDateStatus(monthIndex, left) : "";
+                        string rightStr = (right <= daysInMonth) ? FormatDateStatus(monthIndex, right) : "";
 
                         Console.WriteLine(string.Format("{0,-25} {1}", leftStr, rightStr));
                     }
