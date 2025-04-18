@@ -6,10 +6,12 @@ namespace RestaurantReservation
 {
     public class AvailabilityManager
     {
-        private  Random rand = new Random();
-        private  Dictionary<int, Dictionary<int, BookingStatus[]>> availability = new Dictionary<int, Dictionary<int, BookingStatus[]>>();
+        // Fields
+        private Random rand = new Random();
+        private Dictionary<int, Dictionary<int, BookingStatus[]>> availability = new Dictionary<int, Dictionary<int, BookingStatus[]>>();
         public Dictionary<string, Reservation> BookedReservations = new Dictionary<string, Reservation>();
 
+        // Static Fields
         public static string[] Months = {
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
@@ -19,6 +21,7 @@ namespace RestaurantReservation
             "1:00 PM", "5:00 PM", "9:00 PM", "1:00 AM", "5:00 AM", "9:00 AM"
         };
 
+        // Fake Name Pools
         private List<string> firstNames = new List<string> {
             "Nora","Vilma","Fernando","Dolphy","Vice","Anne","Sarah","Daniel","Kathryn","Coco","Piolo","Liza","Enrique","Alden","Maine",
             "Kris","Toni","Angel","Bea","John Lloyd","Manny","Hidilyn","EJ","Margielyn","Carlos","June Mar","Alyssa","Kai","Marlon","Nesthy"
@@ -30,6 +33,7 @@ namespace RestaurantReservation
             "Valdez","Sotto","Tapales","Petecio"
         };
 
+        // Main Initialization
         public void InitializeMonth(int monthIndex)
         {
             if (availability.ContainsKey(monthIndex)) return;
@@ -68,54 +72,92 @@ namespace RestaurantReservation
             }
         }
 
-
+        // Month Selection
         public int SelectMonth()
         {
             int selected = 0;
+            Console.CursorVisible = false;
+            DisplayMenu(selected);
             while (true)
             {
-                Console.Clear();
-                Console.WriteLine("📅 Select a Month\n");
-                for (int i = 0; i < Months.Length; i++)
-                {
-                    Console.ForegroundColor = (i == selected) ? ConsoleColor.Yellow : ConsoleColor.Gray;
-                    Console.WriteLine((i == selected ? ">> " : "   ") + Months[i]);
-                }
-                Console.ResetColor();
-                Console.WriteLine("\nEsc = Cancel | Enter = Select");
-
                 ConsoleKey key = Console.ReadKey(true).Key;
+                int oldSelected = selected;
+
                 if (key == ConsoleKey.UpArrow) selected = (selected == 0) ? Months.Length - 1 : selected - 1;
                 else if (key == ConsoleKey.DownArrow) selected = (selected == Months.Length - 1) ? 0 : selected + 1;
                 else if (key == ConsoleKey.Escape) return -1;
                 else if (key == ConsoleKey.Enter) return selected;
+
+                if (oldSelected != selected)
+                {
+                    UpdateMenuDisplay(oldSelected, selected);
+                }
             }
         }
 
+        private void DisplayMenu(int selected)
+        {
+            Console.Clear();
+            Console.WriteLine("📅 Select a Month\n");
+            for (int i = 0; i < Months.Length; i++)
+            {
+                Console.ForegroundColor = (i == selected) ? ConsoleColor.Yellow : ConsoleColor.Gray;
+                Console.WriteLine((i == selected ? ">> " : "   ") + Months[i]);
+            }
+            Console.ResetColor();
+            Console.WriteLine("\nEsc = Cancel | Enter = Select");
+        }
+
+        private void UpdateMenuDisplay(int oldSelected, int newSelected)
+        {
+            Console.SetCursorPosition(0, 2 + oldSelected);
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("   " + Months[oldSelected]);
+            Console.SetCursorPosition(0, 2 + newSelected);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(">> " + Months[newSelected]);
+            Console.ResetColor();
+        }
+
+        // Date Selection
         public int SelectDate(int monthIndex)
         {
             int year = 2025;
             int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
             int selectedDay = 1;
+            int rows = (int)Math.Ceiling(daysInMonth / 2.0);
+
+            Console.Clear();
+            Console.CursorVisible = false;
+            Console.WriteLine($"📅 Select a Date ({Months[monthIndex]})\n");
+            DrawCalendar(monthIndex, selectedDay);
 
             while (true)
             {
-                Console.Clear();
-                Console.WriteLine("📅 Select a Date\n");
-                DrawCalendar(monthIndex, selectedDay);
-                Console.WriteLine("\n🔴 = Fully Booked  |  🟡 = Partially Booked | 🟢 = All Open");
-                Console.WriteLine("Use arrow keys to move. Press Enter to select date, Esc to go back");
-
                 ConsoleKey key = Console.ReadKey(true).Key;
-                if (key == ConsoleKey.UpArrow && selectedDay > 1) selectedDay--;
-                else if (key == ConsoleKey.DownArrow && selectedDay < daysInMonth) selectedDay++;
-                else if (key == ConsoleKey.LeftArrow && selectedDay > 15) selectedDay -= 15;
-                else if (key == ConsoleKey.RightArrow && selectedDay + 15 <= daysInMonth) selectedDay += 15;
+                int oldSelected = selectedDay;
+
+                if (key == ConsoleKey.UpArrow && selectedDay - 1 > 0) selectedDay -= 1;
+                else if (key == ConsoleKey.DownArrow && selectedDay + 1 <= daysInMonth) selectedDay += 1;
+                else if (key == ConsoleKey.LeftArrow)
+                {
+                    int target = selectedDay - rows;
+                    if (target >= 1) selectedDay = target;
+                }
+                else if (key == ConsoleKey.RightArrow)
+                {
+                    int target = selectedDay + rows;
+                    if (target <= daysInMonth) selectedDay = target;
+                }
                 else if (key == ConsoleKey.Escape) return -1;
                 else if (key == ConsoleKey.Enter) return selectedDay;
+
+                if (oldSelected != selectedDay)
+                {
+                    UpdateCalendarHighlight(monthIndex, oldSelected, selectedDay);
+                }
             }
         }
-
 
         private void DrawCalendar(int monthIndex, int selectedDay)
         {
@@ -123,32 +165,64 @@ namespace RestaurantReservation
             int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
             int rows = (int)Math.Ceiling(daysInMonth / 2.0);
 
-            for (int row = 1; row <= rows; row++)
+            for (int i = 1; i <= rows; i++)
             {
-                int left = row;
-                int right = row + rows;
-                string leftStr = (left <= daysInMonth) ? FormatDay(monthIndex, left, selectedDay) : "";
-                string rightStr = (right <= daysInMonth) ? FormatDay(monthIndex, right, selectedDay) : "";
-                Console.WriteLine(string.Format("{0,-20} {1}", leftStr, rightStr));
+                int left = i;
+                int right = i + rows;
+
+                string leftStr = left <= daysInMonth ? FormatDayBox(monthIndex, left, left == selectedDay) : "";
+                string rightStr = right <= daysInMonth ? FormatDayBox(monthIndex, right, right == selectedDay) : "";
+
+                Console.WriteLine($"{leftStr,-20} {rightStr}");
             }
+
+            Console.WriteLine("\n🔴 = Fully Booked  |  🟡 = Partially Booked | 🟢 = All Open");
+            Console.WriteLine("Use arrow keys to move. Press Enter to select date, Esc to go back");
         }
 
-
-
-
-        private string FormatDay(int monthIndex, int day, int selected)
+        private void UpdateCalendarHighlight(int monthIndex, int oldDay, int newDay)
         {
-            BookingStatus status = GetDateStatus(monthIndex, day);
-            string circle = status == BookingStatus.Full ? "🔴" :
-                            status == BookingStatus.Partial ? "🟡" : "🟢";
-            string prefix = (day == selected) ? ">> " : "   ";
-            return prefix + circle + day;
+            int year = 2025;
+            int daysInMonth = DateTime.DaysInMonth(year, monthIndex + 1);
+            int rows = (int)Math.Ceiling(daysInMonth / 2.0);
+
+            int oldRow = (oldDay - 1) % rows;
+            int oldCol = (oldDay - 1) / rows;
+            int newRow = (newDay - 1) % rows;
+            int newCol = (newDay - 1) / rows;
+
+            Console.SetCursorPosition(oldCol * 21, 2 + oldRow);
+            Console.Write(FormatDayBox(monthIndex, oldDay, false).PadRight(20));
+
+            Console.SetCursorPosition(newCol * 21, 2 + newRow);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write(FormatDayBox(monthIndex, newDay, true).PadRight(20));
+            Console.ResetColor();
         }
 
+        private string FormatDayBox(int monthIndex, int day, bool selected)
+        {
+            string marker = GetDayStatus(monthIndex, day);
+            string prefix = selected ? ">>" : "  ";
+            return $"{prefix} {day:D2} {marker}";
+        }
+
+        private string GetDayStatus(int monthIndex, int day)
+        {
+            BookingStatus[] slots = availability[monthIndex][day];
+            int full = slots.Count(s => s == BookingStatus.Full);
+            int open = slots.Count(s => s == BookingStatus.Open);
+            if (full == slots.Length) return "🔴";
+            if (open == slots.Length) return "🟢";
+            return "🟡";
+        }
+
+        // Time Slot Selection
         public int SelectTimeSlot(int monthIndex, int day, bool isForViewing = false)
         {
             int selected = 0;
             BookingStatus[] slots = availability[monthIndex][day];
+            Console.CursorVisible = false;
 
             while (true)
             {
@@ -156,31 +230,19 @@ namespace RestaurantReservation
                 Console.WriteLine((isForViewing ? "📆 View Schedule" : "📆 Make Reservation") + "\n");
                 Console.WriteLine("⏰ Select a Time Slot for " + Months[monthIndex] + " " + day + ":\n");
 
-                for (int i = 0; i < TimeSlots.Length; i++)
-                {
-                    string marker = slots[i] == BookingStatus.Full ? "🔴" :
-                                    slots[i] == BookingStatus.Open ? "🟢" : "🟡";
-                    string prefix = (i == selected ? ">> " : "   ");
-                    Console.WriteLine(prefix + marker + " " + TimeSlots[i]);
-                }
+                int baseTop = Console.CursorTop;
+                DrawAllSlots(slots, selected);
 
-                Console.WriteLine("\n🔴 = Fully Booked  |  🟡 = Partial | 🟢 = Open");
+                Console.SetCursorPosition(0, baseTop + TimeSlots.Length + 1);
+                Console.WriteLine("🔴 = Fully Booked  |  🟡 = Partial | 🟢 = Open");
                 Console.WriteLine("Enter = " + (isForViewing ? "View Reservation" : "Select Slot") + " | Esc = Back");
 
                 ConsoleKey key = Console.ReadKey(true).Key;
+                int oldSelected = selected;
 
-                if (key == ConsoleKey.UpArrow)
-                {
-                    selected = (selected == 0) ? TimeSlots.Length - 1 : selected - 1;
-                }
-                else if (key == ConsoleKey.DownArrow)
-                {
-                    selected = (selected == TimeSlots.Length - 1) ? 0 : selected + 1;
-                }
-                else if (key == ConsoleKey.Escape)
-                {
-                    return -1;
-                }
+                if (key == ConsoleKey.UpArrow) selected = (selected == 0) ? TimeSlots.Length - 1 : selected - 1;
+                else if (key == ConsoleKey.DownArrow) selected = (selected == TimeSlots.Length - 1) ? 0 : selected + 1;
+                else if (key == ConsoleKey.Escape) return -1;
                 else if (key == ConsoleKey.Enter)
                 {
                     string keyStr = GenerateKey(monthIndex, day, selected);
@@ -190,6 +252,7 @@ namespace RestaurantReservation
                         if (BookedReservations.ContainsKey(keyStr))
                         {
                             ShowReservation(BookedReservations[keyStr]);
+                            continue;
                         }
                         else
                         {
@@ -198,58 +261,86 @@ namespace RestaurantReservation
                             Console.ResetColor();
                             Console.WriteLine("Press any key to return...");
                             Console.ReadKey();
+                            continue;
                         }
                     }
                     else
                     {
-                        if (slots[selected] != BookingStatus.Full)
-                        {
-                            return selected;
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("\nThat slot is fully booked. Please choose another.");
-                            Console.ResetColor();
-                            Console.ReadKey();
-                        }
+                        if (slots[selected] != BookingStatus.Full) return selected;
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\nThat slot is fully booked. Please choose another.");
+                        Console.ResetColor();
+                        Console.ReadKey();
+                        continue;
                     }
+                }
+
+                if (oldSelected != selected)
+                {
+                    Console.SetCursorPosition(0, baseTop + oldSelected);
+                    DrawSlot(slots, oldSelected, false);
+
+                    Console.SetCursorPosition(0, baseTop + selected);
+                    DrawSlot(slots, selected, true);
                 }
             }
         }
 
+        private void DrawAllSlots(BookingStatus[] slots, int selectedIndex)
+        {
+            for (int i = 0; i < TimeSlots.Length; i++)
+            {
+                DrawSlot(slots, i, i == selectedIndex);
+            }
+        }
+
+        private void DrawSlot(BookingStatus[] slots, int index, bool selected)
+        {
+            string marker = slots[index] == BookingStatus.Full ? "🔴" :
+                            slots[index] == BookingStatus.Open ? "🟢" : "🟡";
+            string prefix = selected ? ">> " : "   ";
+            string line = $"{prefix}{marker} {TimeSlots[index]}";
+            Console.Write(line.PadRight(Console.WindowWidth));
+        }
+
+        private void DrawSingleTimeSlot(BookingStatus[] slots, int index, bool isSelected)
+        {
+            string marker = slots[index] == BookingStatus.Full ? "🔴" :
+                            slots[index] == BookingStatus.Open ? "🟢" : "🟡";
+            string prefix = isSelected ? ">>" : "  ";
+            string line = $"{prefix} {marker} {TimeSlots[index]}";
+            Console.Write(line.PadRight(Console.WindowWidth));
+        }
 
         private void ShowReservation(Reservation res)
         {
             Console.Clear();
             Console.WriteLine("📋 Reservation Details:");
-            Console.WriteLine("📅 " + Months[res.MonthIndex] + " " + res.Day + " at " + TimeSlots[res.TimeIndex]);
-            Console.WriteLine("👤 Name: " + res.Name);
-            Console.WriteLine("📞 Contact: " + res.Contact);
-            Console.WriteLine("👥 Guests: " + res.Guests);
-            Console.WriteLine("📦 Package: " + res.PackageName + " - " + res.PackagePrice + " PHP");
-            Console.WriteLine("🍽 Dining Area: " + res.DiningArea + " - " + res.DiningPrice + " PHP");
+            Console.WriteLine($"📅 {Months[res.MonthIndex]} {res.Day} at {TimeSlots[res.TimeIndex]}");
+            Console.WriteLine($"👤 Name: {res.Name}");
+            Console.WriteLine($"📞 Contact: {res.Contact}");
+            Console.WriteLine($"👥 Guests: {res.Guests}");
+            Console.WriteLine($"📦 Package: {res.PackageName} - {res.PackagePrice} PHP");
+            Console.WriteLine($"🍽 Dining Area: {res.DiningArea} - {res.DiningPrice} PHP");
 
-            if (res.ExtraItems != null && res.ExtraItems.Count > 0)
+            if (res.ExtraItems?.Count > 0)
             {
                 Console.WriteLine("\n🧾 Additional Items:");
-                var grouped = res.ExtraItems
-                    .GroupBy(i => i.Name)
+                var grouped = res.ExtraItems.GroupBy(i => i.Name)
                     .Select(g =>
                     {
                         var item = g.First();
                         int qty = g.Count();
                         return $"• {item.Name} × {qty} = {item.Price * qty} PHP";
                     });
-
                 foreach (var line in grouped)
                     Console.WriteLine(line);
-
-                Console.WriteLine("➕ Extra Total: " + res.ExtraTotal + " PHP");
+                Console.WriteLine($"➕ Extra Total: {res.ExtraTotal} PHP");
             }
 
-            Console.WriteLine("\n💰 Total: " + res.Total + " PHP");
-            Console.WriteLine("🔖 Reference ID: " + res.ReferenceId);
+            Console.WriteLine($"\n💰 Total: {res.Total} PHP");
+            Console.WriteLine($"🔖 Reference ID: {res.ReferenceId}");
             Console.WriteLine("\nPress any key to return...");
             Console.ReadKey();
         }
@@ -270,7 +361,7 @@ namespace RestaurantReservation
                 {
                     Console.Clear();
                     Console.WriteLine("📆 View Schedule\n");
-                    Console.WriteLine("📅 " + Months[monthIndex] + " Availability Schedule\n");
+                    Console.WriteLine($"📅 {Months[monthIndex]} Availability Schedule\n");
                     Console.WriteLine("Operating Hours: 1:00 PM → 9:00 AM\n");
 
                     for (int row = 1; row <= 15; row++)
@@ -281,7 +372,7 @@ namespace RestaurantReservation
                         string leftStr = (left <= daysInMonth) ? FormatDateStatus(monthIndex, left) : "";
                         string rightStr = (right <= daysInMonth) ? FormatDateStatus(monthIndex, right) : "";
 
-                        Console.WriteLine(string.Format("{0,-25} {1}", leftStr, rightStr));
+                        Console.WriteLine($"{leftStr,-25} {rightStr}");
                     }
 
                     Console.WriteLine("\n🔴 = Fully Booked  |  🟡 = Partially Booked | 🟢 = All Open");
@@ -296,7 +387,6 @@ namespace RestaurantReservation
             }
         }
 
-
         private string FormatDateStatus(int monthIndex, int day)
         {
             BookingStatus status = GetDateStatus(monthIndex, day);
@@ -310,17 +400,14 @@ namespace RestaurantReservation
         private BookingStatus GetDateStatus(int monthIndex, int day)
         {
             BookingStatus[] slots = availability[monthIndex][day];
-            int full = 0, open = 0;
-            for (int i = 0; i < slots.Length; i++)
-            {
-                if (slots[i] == BookingStatus.Full) full++;
-                else if (slots[i] == BookingStatus.Open) open++;
-            }
+            int full = slots.Count(s => s == BookingStatus.Full);
+            int open = slots.Count(s => s == BookingStatus.Open);
 
             if (full == slots.Length) return BookingStatus.Full;
             if (open == slots.Length) return BookingStatus.Open;
             return BookingStatus.Partial;
         }
+
         public void MarkSlotAsFull(int monthIndex, int day, int timeIndex)
         {
             availability[monthIndex][day][timeIndex] = BookingStatus.Full;
@@ -350,7 +437,6 @@ namespace RestaurantReservation
 
             List<MenuItem> extraItems = new List<MenuItem>();
             int extraTotal = 0;
-
             int howManyExtras = rand.Next(0, 4);
             List<MenuItem> pool = new List<MenuItem>(MenuData.AllItems);
             for (int i = 0; i < howManyExtras; i++)

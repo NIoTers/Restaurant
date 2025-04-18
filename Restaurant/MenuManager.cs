@@ -9,12 +9,12 @@ namespace RestaurantReservation
         public int ShowMainMenu()
         {
             string[] menu = {
-        "📖 View Menu",
-        "📅 Make a Reservation",
-        "📆 View Schedule",
-        "ℹ️ About Us",
-        "❌ Exit"
-    };
+                "📖 View Menu",
+                "📅 Make a Reservation",
+                "📆 View Schedule",
+                "ℹ️ About Us",
+                "❌ Exit"
+            };
             return SelectMenu("✨ Welcome to the M.A.R.I.L.A.G. Restaurant Reservation System ✨", menu);
         }
 
@@ -22,10 +22,8 @@ namespace RestaurantReservation
         {
             while (true)
             {
-                Console.Clear();
-                Console.WriteLine("📖 View Menu\n");
                 string[] options = { "📦 View Packages", "🍴 View Individual Items", "🔙 Return" };
-                int selected = SelectMenu("📋 Select a Menu Option", options);
+                int selected = SelectMenu("📖 View Menu\n📋 Select a Menu Option", options);
 
                 if (selected == 2) return;
 
@@ -35,7 +33,6 @@ namespace RestaurantReservation
                     ViewIndividualItems();
             }
         }
-
 
         public void ViewPackages()
         {
@@ -77,7 +74,6 @@ namespace RestaurantReservation
                 Console.ReadKey();
             }
         }
-
 
         public void ViewIndividualItems()
         {
@@ -133,22 +129,43 @@ namespace RestaurantReservation
         private int SelectMenu(string title, string[] options)
         {
             int index = 0;
+            Console.CursorVisible = false;
+
+            int startRow = Console.CursorTop;
+            Console.Clear();
+            Console.WriteLine(title + "\n");
+
+            int titleRows = Console.CursorTop;
+
+            for (int i = 0; i < options.Length; i++)
+            {
+                Console.ForegroundColor = (i == index) ? ConsoleColor.Green : ConsoleColor.Gray;
+                Console.WriteLine((i == index ? ">> " : "   ") + options[i]);
+            }
+
+            Console.ResetColor();
+
             while (true)
             {
-                Console.Clear();
-                Console.WriteLine(title + "\n");
-
-                for (int i = 0; i < options.Length; i++)
-                {
-                    Console.ForegroundColor = (i == index) ? ConsoleColor.Green : ConsoleColor.Gray;
-                    Console.WriteLine((i == index ? ">> " : "   ") + options[i]);
-                }
-                Console.ResetColor();
-
                 ConsoleKey key = Console.ReadKey(true).Key;
+                int oldIndex = index;
+
                 if (key == ConsoleKey.UpArrow) index = (index == 0) ? options.Length - 1 : index - 1;
                 else if (key == ConsoleKey.DownArrow) index = (index == options.Length - 1) ? 0 : index + 1;
                 else if (key == ConsoleKey.Enter) return index;
+
+                if (index != oldIndex)
+                {
+                    Console.SetCursorPosition(0, titleRows + oldIndex);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.WriteLine("   " + options[oldIndex]);
+
+                    Console.SetCursorPosition(0, titleRows + index);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine(">> " + options[index]);
+
+                    Console.ResetColor();
+                }
             }
         }
     }

@@ -51,18 +51,6 @@ namespace RestaurantReservation
 
             ShowPackageDetails(selectedIndex);
         }
-
-        private void ShowPackageDetails(int packageIndex)
-        {
-            Console.Clear();
-            string packageDetails = GetPackageDetails(packageIndex);
-
-            Console.WriteLine(packageDetails);
-            Console.WriteLine("\nPress any key to go back...");
-            Console.ReadKey();
-            ShowPackages();
-        }
-
         private string GetPackageDetails(int index)
         {
             string packageDetails = "";
@@ -109,6 +97,15 @@ namespace RestaurantReservation
 
             return packageDetails;
         }
+        private void ShowPackageDetails(int packageIndex)
+        {
+            Console.Clear();
+            string packageDetails = GetPackageDetails(packageIndex);
 
+            Console.WriteLine(packageDetails);
+            Console.WriteLine("\nPress any key to go back...");
+            Console.ReadKey();
+            ShowPackages();
+        }
     }
 }

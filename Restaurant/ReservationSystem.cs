@@ -5,8 +5,8 @@ namespace RestaurantReservation
 {
     public class ReservationSystem
     {
-        private readonly MenuManager menuManager = new MenuManager();
-        private readonly AvailabilityManager availabilityManager = new AvailabilityManager();
+        private MenuManager menuManager = new MenuManager();
+        private AvailabilityManager availabilityManager = new AvailabilityManager();
 
         public void Run()
         {
@@ -34,12 +34,10 @@ namespace RestaurantReservation
                         Console.WriteLine("👋 Exiting... Have a great day!");
                         running = false;
                         break;
-
                 }
             }
         }
-
-        private void AboutUs()
+       private void AboutUs()
         {
             Console.Clear();
             Console.WriteLine("ℹ️ About Us\n");
@@ -55,8 +53,6 @@ namespace RestaurantReservation
             Console.WriteLine("\nPress any key to return to the main menu...");
             Console.ReadKey();
         }
-
-
 
         private void MakeReservation()
         {
@@ -158,7 +154,7 @@ namespace RestaurantReservation
                 Console.WriteLine("📋 Available Items:\n");
                 for (int i = 0; i < allItems.Count; i++)
                 {
-                    Console.WriteLine((i + 1) + ". " + allItems[i]);
+                    Console.WriteLine($"{i + 1}. {allItems[i].Name} - {allItems[i].Price} PHP");
                 }
 
                 Console.Write("\nEnter the item number to add: ");
@@ -265,7 +261,5 @@ namespace RestaurantReservation
             Console.WriteLine("\nPress any key to return to the menu...");
             Console.ReadKey();
         }
-
-
     }
 }
