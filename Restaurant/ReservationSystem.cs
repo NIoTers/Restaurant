@@ -7,7 +7,7 @@ namespace RestaurantReservation
     public class ReservationSystem
     {
         private MenuManager menuManager = new MenuManager();
-        private AvailabilityManager availabilityManager = new AvailabilityManager();
+        private Scheduler availabilityManager = new Scheduler();
         private List<Reservation> reservations = new List<Reservation>();
         public ReservationSystem()
         {
@@ -54,11 +54,11 @@ namespace RestaurantReservation
             Console.WriteLine("ℹ️ About Us\n");
             Console.WriteLine("The M.A.R.I.L.A.G. Reservation System was proudly developed by the following team:\n");
             Console.WriteLine("🫃🏻 Cholo H. Gallardo            - Team Leader / Main Developer");
-            Console.WriteLine("👨‍💻 Charles Andrei S. Alarcon    - Code Optimization");
+            Console.WriteLine("👨‍💻 Charles Andrei S. Alarcon    - Make Reservation / Code Optimization");
             Console.WriteLine("🎨 Princess Naoebe P. Dizon     - UI Design & Documentation");
-            Console.WriteLine("📆 Joseph Andrew C. Fernandez   - Scheduling Module");
-            Console.WriteLine("📦 Adrian Kyle C. Garfin        - View Packages Feature");
-            Console.WriteLine("📝 Gwyneth B. Saga              - Make Reservation Feature");
+            Console.WriteLine("📆 Joseph Andrew C. Fernandez   - Search Schedule Module");
+            Console.WriteLine("📦 Adrian Kyle C. Garfin        - View Packages Module");
+            Console.WriteLine("📝 Gwyneth B. Saga              - Cancel Reservation Module");
             Console.WriteLine("\nPress any key to return to the main menu...");
             Console.ReadKey();
         }
@@ -149,7 +149,7 @@ namespace RestaurantReservation
                     if (reservationDate >= DateTime.Today)
                     {
                         bool allFull = true;
-                        for (int i = 0; i < AvailabilityManager.TimeSlots.Length; i++)
+                        for (int i = 0; i < Scheduler.TimeSlots.Length; i++)
                         {
                             if (availabilityManager.IsSlotAvailable(reservationDate, i))
                             {
@@ -193,7 +193,7 @@ namespace RestaurantReservation
                 if (input.Length > 0 && input.All(char.IsDigit))
                 {
                     timeIndex = int.Parse(input);
-                    if (timeIndex >= 1 && timeIndex <= AvailabilityManager.TimeSlots.Length)
+                    if (timeIndex >= 1 && timeIndex <= Scheduler.TimeSlots.Length)
                     {
                         if (availabilityManager.IsSlotAvailable(reservationDate, timeIndex - 1))
                         {
@@ -210,7 +210,7 @@ namespace RestaurantReservation
                     else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("⚠ Please enter a valid slot number between 1 and " + AvailabilityManager.TimeSlots.Length);
+                        Console.WriteLine("⚠ Please enter a valid slot number between 1 and " + Scheduler.TimeSlots.Length);
                         Console.ResetColor();
                     }
                 }
@@ -385,7 +385,7 @@ namespace RestaurantReservation
             Console.WriteLine("          📝 Reservation Receipt                  ");
             Console.WriteLine(divider);
             Console.WriteLine($"📅 Date: {reservationDate:MMMM dd, yyyy}");
-            Console.WriteLine($"⏰ Time: {AvailabilityManager.TimeSlots[timeIndex]}");
+            Console.WriteLine($"⏰ Time: {Scheduler.TimeSlots[timeIndex]}");
             Console.WriteLine($"🍽  Dining Area: {venue.Item1} - {venue.Item2:N2} PHP");
             Console.WriteLine($"📦 Package: {package.Item1} - {package.Item2:N2} PHP");
 
@@ -497,7 +497,7 @@ namespace RestaurantReservation
                     Console.WriteLine("          📝 Reservation Receipt");
                     Console.WriteLine(divider);
                     Console.WriteLine($"📅 Date: {date:MMMM dd, yyyy}");
-                    Console.WriteLine($"⏰ Time: {AvailabilityManager.TimeSlots[r.TimeIndex]}");
+                    Console.WriteLine($"⏰ Time: {Scheduler.TimeSlots[r.TimeIndex]}");
                     Console.WriteLine($"🍽  Dining Area: {r.DiningArea} - {r.DiningPrice} PHP");
                     Console.WriteLine($"📦 Package: {r.PackageName} - {r.PackagePrice} PHP");
 
@@ -591,7 +591,7 @@ namespace RestaurantReservation
                 Console.WriteLine($"📦 Package    : {foundReservation.PackageName}");
                 Console.WriteLine($"💰 Total      : {foundReservation.Total:N2} PHP");
                 Console.WriteLine($"📅 Date       : {reservationDate:MMMM dd, yyyy}");
-                Console.WriteLine($"⏰ Time       : {AvailabilityManager.TimeSlots[foundReservation.TimeIndex]}");
+                Console.WriteLine($"⏰ Time       : {Scheduler.TimeSlots[foundReservation.TimeIndex]}");
                 Console.WriteLine(divider);
 
                 Console.Write("\n⚠ Confirm cancellation? (y/n): ");

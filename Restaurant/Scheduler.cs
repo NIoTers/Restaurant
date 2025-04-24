@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace RestaurantReservation
 {
-    public class AvailabilityManager
+    public class Scheduler
     {
         private readonly Dictionary<DateTime, BookingStatus[]> availability
             = new Dictionary<DateTime, BookingStatus[]>();

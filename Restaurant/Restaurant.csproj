@@ -43,7 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AvailabilityManager.cs" />
+    <Compile Include="Scheduler.cs" />
     <Compile Include="BookingStatus.cs" />
     <Compile Include="DiningArea.cs" />
     <Compile Include="MenuData.cs" />
