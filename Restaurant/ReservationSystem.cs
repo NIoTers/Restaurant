@@ -329,18 +329,30 @@ namespace RestaurantReservation
             Console.WriteLine($"🔖 Reference: {reservation.ReferenceId}");
             Console.WriteLine(divider);
 
-            Console.Write("\n💳 Amount due: ");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{finalTotal:N2}");
-            Console.ResetColor();
-            Console.Write(" PHP. Please enter payment: ");
-            double payment;
-            while (!double.TryParse(Console.ReadLine(), out payment) || payment < finalTotal)
+            double payment = 0;
+            while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("❌ Invalid or insufficient payment. Please enter an amount ≥ total due.");
+                Console.Write($"\n💳 Amount due: ");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write($"{finalTotal:N2}");
                 Console.ResetColor();
-                Console.Write("💳 Enter payment: ");
+                Console.Write(" PHP\n💳 Enter payment: ");
+
+                try
+                {
+                    payment = Convert.ToDouble(Console.ReadLine());
+                    if (Math.Round(payment, 2) >= Math.Round(finalTotal, 2)) break;
+
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("❌ Payment is less than the amount due.");
+                    Console.ResetColor();
+                }
+                catch
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("❌ Please enter a valid number.");
+                    Console.ResetColor();
+                }
             }
             double change = payment - finalTotal;
             Console.ForegroundColor = ConsoleColor.Green;
