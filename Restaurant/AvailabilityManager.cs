@@ -26,17 +26,26 @@ namespace RestaurantReservation
             }
         }
 
-        public bool TryParseDate(string input, out DateTime date)
+        public bool TryParseDate(string input, DateTime date)
         {
-            var formats = new[] {
-                "MM/dd/yy", "M/d/yy",
-                "MMMM d, yyyy", "MMM d, yyyy",
-                "MM/dd/yyyy", "M/d/yyyy",
-                "MM-dd-yy", "M-d-yy",
-                "MM-dd-yyyy", "M-d-yyyy"
-            };
+            string[] formats = new string[] {
+        "MM/dd/yy", "M/d/yy", "MMMM d, yyyy", "MMM d, yyyy", "MM/dd/yyyy", "M/d/yyyy",
+        "MM-dd-yy", "M-d-yy", "MM-dd-yyyy", "M-d-yyyy"
+    };
 
-            return DateTime.TryParseExact(input, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+            foreach (var format in formats)
+            {
+                try
+                {
+                    date = DateTime.ParseExact(input, format, null);
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+
+            return false;
         }
 
         public bool IsValidDate(DateTime date)
@@ -48,16 +57,17 @@ namespace RestaurantReservation
 
         public bool IsSlotAvailable(DateTime date, int slotIndex)
         {
-            if (!availability.TryGetValue(date.Date, out var slots))
+            if (!availability.ContainsKey(date.Date))
                 return false;
-            return slots[slotIndex] == BookingStatus.Open;
+            return availability[date.Date][slotIndex] == BookingStatus.Open;
         }
 
         public void MarkSlotAsFull(DateTime date, int slotIndex)
         {
-            if (availability.TryGetValue(date.Date, out var slots))
-                slots[slotIndex] = BookingStatus.Full;
+            if (availability.ContainsKey(date.Date))
+                availability[date.Date][slotIndex] = BookingStatus.Full;
         }
+
 
         public void RandomizeReservations(DateTime start, DateTime end)
         {
@@ -78,8 +88,8 @@ namespace RestaurantReservation
 
         public void MarkSlotAsAvailable(DateTime date, int slotIndex)
         {
-            if (availability.TryGetValue(date.Date, out var slots))
-                slots[slotIndex] = BookingStatus.Open;
+            if (availability.ContainsKey(date.Date))
+                availability[date.Date][slotIndex] = BookingStatus.Open;
         }
 
         public void ShowAvailability(DateTime date)

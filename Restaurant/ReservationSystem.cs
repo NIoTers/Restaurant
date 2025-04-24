@@ -88,11 +88,12 @@ namespace RestaurantReservation
             {
                 Console.Write("📞 Contact Number: ");
                 contact = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(contact) && contact.Length >= 7 && long.TryParse(contact, out _)) break;
+                if (!string.IsNullOrWhiteSpace(contact) && contact.Length >= 7 && contact.All(char.IsDigit)) break;
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("⚠ Contact must be at least 7 digits and digits only.");
                 Console.ResetColor();
             }
+
 
             int existing = reservations.Count(r =>
                 r.Contact == contact && r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
@@ -108,10 +109,14 @@ namespace RestaurantReservation
             int tables;
             while (true)
             {
-                Console.Write("🪑 Number of Tables: ");
-                if (int.TryParse(Console.ReadLine(), out tables) && tables > 0) break;
+                Console.Write("🪑 Number of Tables (1-3): ");
+                string input = Console.ReadLine();
+                tables = Convert.ToInt32(input); 
+
+                if (tables > 0 && tables <= 3) break;
+
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("⚠ Invalid number of tables.");
+                Console.WriteLine("⚠ Invalid number of tables. Please enter a number between 1 and 3.");
                 Console.ResetColor();
             }
 
@@ -119,9 +124,17 @@ namespace RestaurantReservation
             while (true)
             {
                 Console.Write("👥 Number of Guests: ");
-                if (int.TryParse(Console.ReadLine(), out guests) && guests >= 0 && guests <= tables * 2) break;
+                string input = Console.ReadLine();
+                guests = Convert.ToInt32(input);
+
+                int minGuests = tables == 1 ? 0 : tables * 1 + 1;
+                int maxGuests = tables * 2;
+
+                if ((tables == 1 && guests == 0) || (guests >= minGuests && guests <= maxGuests))
+                    break;
+
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("⚠ Guests must be between 0 and tables×2.");
+                Console.WriteLine($"⚠ Guests must be between {minGuests} and {maxGuests}.");
                 Console.ResetColor();
             }
 
@@ -130,32 +143,45 @@ namespace RestaurantReservation
             {
                 Console.Write("📅 Enter date (MM/DD/YY or Month d, yyyy): ");
                 string input = Console.ReadLine();
-                if (availabilityManager.TryParseDate(input, out reservationDate) &&
-                    availabilityManager.IsValidDate(reservationDate))
+                try
                 {
-                    bool allFull = true;
-                    for (int i = 0; i < AvailabilityManager.TimeSlots.Length; i++)
+                    reservationDate = DateTime.Parse(input);
+                    if (reservationDate >= DateTime.Today)
                     {
-                        if (availabilityManager.IsSlotAvailable(reservationDate, i))
+                        bool allFull = true;
+                        for (int i = 0; i < AvailabilityManager.TimeSlots.Length; i++)
                         {
-                            allFull = false;
-                            break;
+                            if (availabilityManager.IsSlotAvailable(reservationDate, i))
+                            {
+                                allFull = false;
+                                break;
+                            }
                         }
+                        if (allFull)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("⚠ All time slots are fully booked for this date. Please choose another date.");
+                            Console.ResetColor();
+                            Console.ReadKey();
+                            continue;
+                        }
+                        break;
                     }
-                    if (allFull)
+                    else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("⚠ All time slots are fully booked for this date. Please choose another date.");
+                        Console.WriteLine("⚠ The reservation date cannot be in the past. Please select a valid future date.");
                         Console.ResetColor();
-                        Console.ReadKey();
-                        continue;
                     }
-                    break;
                 }
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("⚠ Invalid or out-of-range date.");
-                Console.ResetColor();
+                catch
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("⚠ Invalid or out-of-range date. Please try again.");
+                    Console.ResetColor();
+                }
             }
+
 
             int timeIndex;
             while (true)
@@ -163,18 +189,41 @@ namespace RestaurantReservation
                 Console.Clear();
                 availabilityManager.ShowAvailability(reservationDate);
                 Console.Write("Select time slot number: ");
-                if (int.TryParse(Console.ReadLine(), out timeIndex) &&
-                    timeIndex >= 1 && timeIndex <= AvailabilityManager.TimeSlots.Length &&
-                    availabilityManager.IsSlotAvailable(reservationDate, timeIndex - 1))
+                string input = Console.ReadLine();
+                if (input.Length > 0 && input.All(char.IsDigit))
                 {
-                    timeIndex -= 1;
-                    break;
+                    timeIndex = int.Parse(input);
+                    if (timeIndex >= 1 && timeIndex <= AvailabilityManager.TimeSlots.Length)
+                    {
+                        if (availabilityManager.IsSlotAvailable(reservationDate, timeIndex - 1))
+                        {
+                            timeIndex -= 1;
+                            break;
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("⚠ Slot is unavailable. Please select a different one.");
+                            Console.ResetColor();
+                        }
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("⚠ Please enter a valid slot number between 1 and " + AvailabilityManager.TimeSlots.Length);
+                        Console.ResetColor();
+                    }
                 }
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("⚠ Invalid or unavailable slot.");
-                Console.ResetColor();
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("⚠ Invalid input. Please enter a valid number.");
+                    Console.ResetColor();
+                }
+
                 Console.ReadKey();
             }
+
 
             availabilityManager.MarkSlotAsFull(reservationDate, timeIndex);
 
@@ -190,36 +239,67 @@ namespace RestaurantReservation
                 string ans = Console.ReadLine().Trim().ToLower();
                 if (ans == "n") break;
                 if (ans != "y") continue;
+
                 var allItems = menuManager.GetAllIndividualItems();
                 Console.Clear();
                 for (int i = 0; i < allItems.Count; i++)
                     Console.WriteLine($"{i + 1}. {allItems[i].Name} - {allItems[i].Price} PHP");
+
                 Console.Write("\nItem number: ");
-                if (!int.TryParse(Console.ReadLine(), out int choice) ||
-                    choice < 1 || choice > allItems.Count)
+                string itemInput = Console.ReadLine().Trim();
+                if (itemInput.Length > 0 && itemInput.All(char.IsDigit))
+                {
+                    int choice = int.Parse(itemInput);
+                    if (choice >= 1 && choice <= allItems.Count)
+                    {
+                        var item = allItems[choice - 1];
+
+                        Console.Write("Quantity: ");
+                        string qtyInput = Console.ReadLine().Trim();
+                        if (qtyInput.Length > 0 && qtyInput.All(char.IsDigit))
+                        {
+                            int qty = int.Parse(qtyInput);
+                            if (qty > 0)
+                            {
+                                if (extraItems.ContainsKey(item))
+                                    extraItems[item] += qty;
+                                else
+                                    extraItems[item] = qty;
+
+                                extraTotal += item.Price * qty;
+
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine($"✔ {item.Name} × {qty} added.");
+                                Console.ResetColor();
+                            }
+                            else
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("⚠ Invalid quantity. Must be greater than 0.");
+                                Console.ResetColor();
+                            }
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("⚠ Invalid quantity.");
+                            Console.ResetColor();
+                        }
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("⚠ Invalid item selection.");
+                        Console.ResetColor();
+                    }
+                }
+                else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("⚠ Invalid selection.");
                     Console.ResetColor();
-                    Console.ReadKey();
-                    continue;
                 }
-                var item = allItems[choice - 1];
-                Console.Write("Quantity: ");
-                if (!int.TryParse(Console.ReadLine(), out int qty) || qty <= 0)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("⚠ Invalid quantity.");
-                    Console.ResetColor();
-                    Console.ReadKey();
-                    continue;
-                }
-                if (extraItems.ContainsKey(item)) extraItems[item] += qty;
-                else extraItems[item] = qty;
-                extraTotal += item.Price * qty;
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"✔ {item.Name} × {qty} added.");
-                Console.ResetColor();
+
                 Console.ReadKey();
             }
 
@@ -405,7 +485,7 @@ namespace RestaurantReservation
             {
                 foreach (var r in results)
                 {
-                    var date = new DateTime(DateTime.Today.Year, r.MonthIndex + 1, r.Day);
+                    var date = new DateTime(r.Year, r.MonthIndex + 1, r.Day);
                     double extrasTotal = r.ExtraItems.Sum(e => e.Price);
                     double subtotal = r.PackagePrice + r.DiningPrice + extrasTotal;
                     double discount = r.DiscountAmount;
@@ -550,15 +630,6 @@ namespace RestaurantReservation
             Console.WriteLine("\nPress any key to return to the menu...");
             Console.ReadKey();
         }
-
-
-
-
-
-
-
-
-
 
     }
 }
