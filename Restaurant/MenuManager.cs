@@ -9,12 +9,13 @@ namespace RestaurantReservation
         public int ShowMainMenu()
         {
             string[] menu = {
-                "📖 View Menu",
-                "📅 Make a Reservation",
-                "📆 View Schedule",
-                "ℹ️ About Us",
-                "❌ Exit"
-            };
+                    "📖 View Menu",
+                    "📅 Make a Reservation",
+                    "📆 Search Schedule",
+                    "❌ Cancel Reservation",  
+                    "ℹ️ About Us",
+                    "❌ Exit"
+                };
             return SelectMenu("✨ Welcome to the M.A.R.I.L.A.G. Restaurant Reservation System ✨", menu);
         }
 
@@ -38,40 +39,75 @@ namespace RestaurantReservation
         {
             while (true)
             {
-                string[] menu = { "Package A", "Package B", "Package C", "🔙 Return" };
-                int selected = SelectMenu("🍱 Select a Package to View", menu);
-                if (selected == 3) return;
+                string[] categories = { "👤 Solo Meal Packages", "💑 Couple Meal Packages", "👨‍👩‍👧‍👦 Family Meal Packages", "🌟 VIP Meal Packages", "🔙 Return" };
+                int selectedCategory = SelectMenu("🍱 Choose a Package Category", categories);
+                if (selectedCategory == 4) return;
 
-                Console.Clear();
-                var package = MenuData.Packages[selected];
-                Console.WriteLine($"📦 {package.Name} - {package.TotalPrice} PHP\n");
+                string keyword = selectedCategory == 0 ? "Solo" :
+                                 selectedCategory == 1 ? "Couple" :
+                                 selectedCategory == 2 ? "Family" :
+                                 "VIP";
 
-                var grouped = new Dictionary<string, List<MenuItem>>();
+                var filteredPackages = MenuData.Packages
+                    .Where(p => p.Name.Contains(keyword))
+                    .ToList();
 
-                foreach (var item in package.Items)
+                if (filteredPackages.Count == 0)
                 {
-                    if (!grouped.ContainsKey(item.Category))
-                        grouped[item.Category] = new List<MenuItem>();
-
-                    grouped[item.Category].Add(item);
+                    Console.WriteLine("No packages found in this category.");
+                    Console.ReadKey();
+                    continue;
                 }
 
-                foreach (var category in grouped.Keys)
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"[{category}]");
-                    Console.ResetColor();
+                string emoji = selectedCategory == 0 ? "👤" :
+                               selectedCategory == 1 ? "💑" :
+                               selectedCategory == 2 ? "👨‍👩‍👧‍👦" :
+                               "🌟";
 
-                    foreach (var item in grouped[category])
+                while (true)
+                {
+                    var packageNamesWithReturn = filteredPackages
+                        .Select(p => emoji + " " + p.Name + " - " + p.TotalPrice + " PHP")
+                        .ToList();
+
+                    packageNamesWithReturn.Add("🔙 Return");
+
+                    int selectedPackage = SelectMenu($"📦 {categories[selectedCategory]}", packageNamesWithReturn.ToArray());
+
+                    if (selectedPackage == packageNamesWithReturn.Count - 1) break;
+
+                    Console.Clear();
+
+                    var package = filteredPackages[selectedPackage];
+                    Console.WriteLine($"📦 {emoji} {package.Name} - {package.TotalPrice} PHP\n");
+
+                    var grouped = new Dictionary<string, List<MenuItem>>();
+
+                    foreach (var item in package.Items)
                     {
-                        Console.WriteLine($"• {item.Name} - {item.Price} PHP");
+                        if (!grouped.ContainsKey(item.Category))
+                            grouped[item.Category] = new List<MenuItem>();
+
+                        grouped[item.Category].Add(item);
                     }
 
-                    Console.WriteLine();
-                }
+                    foreach (var category in grouped.Keys)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"[{category}]");
+                        Console.ResetColor();
 
-                Console.WriteLine("Press any key to return...");
-                Console.ReadKey();
+                        foreach (var item in grouped[category])
+                        {
+                            Console.WriteLine($"• {item.Name} - {item.Price} PHP");
+                        }
+
+                        Console.WriteLine();
+                    }
+
+                    Console.WriteLine("Press any key to return to the package list...");
+                    Console.ReadKey();
+                }
             }
         }
 
@@ -113,12 +149,12 @@ namespace RestaurantReservation
 
         public Tuple<string, int> SelectDiningArea()
         {
-            string[] venues = { "Al Fresco - 20,000 PHP", "Near Performer - 22,000 PHP", "Dine-In - 18,000 PHP" };
-            int[] prices = { 20000, 22000, 18000 };
+            var diningAreaNames = MenuData.DiningAreas
+                .Select(d => d.Name + " - " + d.Price + " PHP").ToArray();
 
-            int selected = SelectMenu("🍽 Choose your dining area", venues);
-            string venueName = venues[selected].Split('-')[0].Trim();
-            return new Tuple<string, int>(venueName, prices[selected]);
+            int selected = SelectMenu("🍽 Choose your dining area", diningAreaNames);
+            var selectedDiningArea = MenuData.DiningAreas[selected];
+            return new Tuple<string, int>(selectedDiningArea.Name, selectedDiningArea.Price);
         }
 
         public List<MenuItem> GetAllIndividualItems()
@@ -126,7 +162,7 @@ namespace RestaurantReservation
             return MenuData.AllItems;
         }
 
-        private int SelectMenu(string title, string[] options)
+        public int SelectMenu(string title, string[] options)
         {
             int index = 0;
             Console.CursorVisible = false;

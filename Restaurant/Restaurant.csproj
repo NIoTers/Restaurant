@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="AvailabilityManager.cs" />
     <Compile Include="BookingStatus.cs" />
+    <Compile Include="DiningArea.cs" />
     <Compile Include="MenuData.cs" />
     <Compile Include="MenuItem.cs" />
     <Compile Include="MenuManager.cs" />
