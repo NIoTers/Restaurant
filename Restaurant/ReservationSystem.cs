@@ -9,12 +9,14 @@ namespace RestaurantReservation
         private MenuManager menuManager = new MenuManager();
         private Scheduler availabilityManager = new Scheduler();
         private List<Reservation> reservations = new List<Reservation>();
+        static string divider = "*******************************************";
+
         public ReservationSystem()
         {
             availabilityManager.InitializeAvailability(DateTime.Today, new DateTime(2026, 6, 30));
             availabilityManager.RandomizeReservations(DateTime.Today, new DateTime(2026, 6, 30));
         }
-        static String divider = "*******************************************";
+
         public void Run()
         {
             bool running = true;
@@ -34,7 +36,7 @@ namespace RestaurantReservation
                         SearchReservation();
                         break;
                     case 3:
-                        CancelReservation();  
+                        CancelReservation();
                         break;
                     case 4:
                         AboutUs();
@@ -46,7 +48,6 @@ namespace RestaurantReservation
                 }
             }
         }
-
 
         private void AboutUs()
         {
@@ -94,7 +95,6 @@ namespace RestaurantReservation
                 Console.ResetColor();
             }
 
-
             int existing = reservations.Count(r =>
                 r.Contact == contact && r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (existing >= 5)
@@ -110,11 +110,7 @@ namespace RestaurantReservation
             while (true)
             {
                 Console.Write("🪑 Number of Tables (1-3): ");
-                string input = Console.ReadLine();
-                tables = Convert.ToInt32(input); 
-
-                if (tables > 0 && tables <= 3) break;
-
+                if (int.TryParse(Console.ReadLine(), out tables) && tables > 0 && tables <= 3) break;
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("⚠ Invalid number of tables. Please enter a number between 1 and 3.");
                 Console.ResetColor();
@@ -124,17 +120,14 @@ namespace RestaurantReservation
             while (true)
             {
                 Console.Write("👥 Number of Guests: ");
-                string input = Console.ReadLine();
-                guests = Convert.ToInt32(input);
-
-                int minGuests = tables == 1 ? 0 : tables * 1 + 1;
-                int maxGuests = tables * 2;
-
-                if ((tables == 1 && guests == 0) || (guests >= minGuests && guests <= maxGuests))
-                    break;
-
+                if (int.TryParse(Console.ReadLine(), out guests))
+                {
+                    int minGuests = tables == 1 ? 0 : tables + 1;
+                    int maxGuests = tables * 2;
+                    if ((tables == 1 && guests == 0) || (guests >= minGuests && guests <= maxGuests)) break;
+                }
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"⚠ Guests must be between {minGuests} and {maxGuests}.");
+                Console.WriteLine($"⚠ Guests must be between {(tables == 1 ? 0 : tables + 1)} and {tables * 2}.");
                 Console.ResetColor();
             }
 
@@ -182,7 +175,6 @@ namespace RestaurantReservation
                 }
             }
 
-
             int timeIndex;
             while (true)
             {
@@ -190,41 +182,18 @@ namespace RestaurantReservation
                 availabilityManager.ShowAvailability(reservationDate);
                 Console.Write("Select time slot number: ");
                 string input = Console.ReadLine();
-                if (input.Length > 0 && input.All(char.IsDigit))
+                if (int.TryParse(input, out timeIndex)
+                    && timeIndex >= 1 && timeIndex <= Scheduler.TimeSlots.Length
+                    && availabilityManager.IsSlotAvailable(reservationDate, timeIndex - 1))
                 {
-                    timeIndex = int.Parse(input);
-                    if (timeIndex >= 1 && timeIndex <= Scheduler.TimeSlots.Length)
-                    {
-                        if (availabilityManager.IsSlotAvailable(reservationDate, timeIndex - 1))
-                        {
-                            timeIndex -= 1;
-                            break;
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("⚠ Slot is unavailable. Please select a different one.");
-                            Console.ResetColor();
-                        }
-                    }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("⚠ Please enter a valid slot number between 1 and " + Scheduler.TimeSlots.Length);
-                        Console.ResetColor();
-                    }
+                    timeIndex -= 1;
+                    break;
                 }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("⚠ Invalid input. Please enter a valid number.");
-                    Console.ResetColor();
-                }
-
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("⚠ Invalid or unavailable slot. Please choose again.");
+                Console.ResetColor();
                 Console.ReadKey();
             }
-
-
             availabilityManager.MarkSlotAsFull(reservationDate, timeIndex);
 
             var package = menuManager.SelectPackage();
@@ -236,60 +205,32 @@ namespace RestaurantReservation
             while (true)
             {
                 Console.Write("➕ Add extra item? (y/n): ");
-                string ans = Console.ReadLine().Trim().ToLower();
+                var ans = Console.ReadLine().Trim().ToLower();
                 if (ans == "n") break;
                 if (ans != "y") continue;
-
                 var allItems = menuManager.GetAllIndividualItems();
                 Console.Clear();
                 for (int i = 0; i < allItems.Count; i++)
                     Console.WriteLine($"{i + 1}. {allItems[i].Name} - {allItems[i].Price} PHP");
-
                 Console.Write("\nItem number: ");
-                string itemInput = Console.ReadLine().Trim();
-                if (itemInput.Length > 0 && itemInput.All(char.IsDigit))
+                if (int.TryParse(Console.ReadLine(), out int choice)
+                    && choice >= 1 && choice <= allItems.Count)
                 {
-                    int choice = int.Parse(itemInput);
-                    if (choice >= 1 && choice <= allItems.Count)
+                    var item = allItems[choice - 1];
+                    Console.Write("Quantity: ");
+                    if (int.TryParse(Console.ReadLine(), out int qty) && qty > 0)
                     {
-                        var item = allItems[choice - 1];
-
-                        Console.Write("Quantity: ");
-                        string qtyInput = Console.ReadLine().Trim();
-                        if (qtyInput.Length > 0 && qtyInput.All(char.IsDigit))
-                        {
-                            int qty = int.Parse(qtyInput);
-                            if (qty > 0)
-                            {
-                                if (extraItems.ContainsKey(item))
-                                    extraItems[item] += qty;
-                                else
-                                    extraItems[item] = qty;
-
-                                extraTotal += item.Price * qty;
-
-                                Console.ForegroundColor = ConsoleColor.Green;
-                                Console.WriteLine($"✔ {item.Name} × {qty} added.");
-                                Console.ResetColor();
-                            }
-                            else
-                            {
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                Console.WriteLine("⚠ Invalid quantity. Must be greater than 0.");
-                                Console.ResetColor();
-                            }
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("⚠ Invalid quantity.");
-                            Console.ResetColor();
-                        }
+                        if (!extraItems.ContainsKey(item)) extraItems[item] = 0;
+                        extraItems[item] += qty;
+                        extraTotal += item.Price * qty;
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"✔ {item.Name} × {qty} added.");
+                        Console.ResetColor();
                     }
                     else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("⚠ Invalid item selection.");
+                        Console.WriteLine("⚠ Invalid quantity.");
                         Console.ResetColor();
                     }
                 }
@@ -299,17 +240,8 @@ namespace RestaurantReservation
                     Console.WriteLine("⚠ Invalid selection.");
                     Console.ResetColor();
                 }
-
                 Console.ReadKey();
             }
-
-            double total = package.Item2 + venue.Item2;
-            string reference = "RES-" + new Random().Next(1000, 9999);
-
-            var flatExtras = new List<MenuItem>();
-            foreach (var kv in extraItems)
-                for (int i = 0; i < kv.Value; i++)
-                    flatExtras.Add(kv.Key);
 
             var reservation = new Reservation
             {
@@ -317,20 +249,18 @@ namespace RestaurantReservation
                 Contact = contact,
                 Tables = tables,
                 Guests = guests,
-                ReferenceId = reference,
+                ReferenceId = "RES-" + new Random().Next(1000, 9999),
                 PackageName = package.Item1,
                 PackagePrice = package.Item2,
                 DiningArea = venue.Item1,
                 DiningPrice = venue.Item2,
-                ExtraItems = flatExtras,
+                ExtraItems = extraItems.SelectMany(kv => Enumerable.Repeat(kv.Key, kv.Value)).ToList(),
                 ExtraTotal = extraTotal,
                 MonthIndex = reservationDate.Month - 1,
                 Day = reservationDate.Day,
                 Year = reservationDate.Year,
                 TimeIndex = timeIndex
             };
-
-            reservations.Add(reservation);
 
             double discount = 0;
             string discountDetails = "No discount applied";
@@ -372,9 +302,10 @@ namespace RestaurantReservation
                 }
             }
 
-            double totalWithDiscount = total - discount;
+            double subtotal = package.Item2 + venue.Item2 + extraTotal;
+            double totalWithDiscount = subtotal - discount;
             double tax = totalWithDiscount * 0.12;
-            double finalTotal = totalWithDiscount + tax + extraTotal;
+            double finalTotal = totalWithDiscount + tax;
 
             reservation.DiscountAmount = discount;
             reservation.TaxAmount = tax;
@@ -384,20 +315,18 @@ namespace RestaurantReservation
             Console.WriteLine(divider);
             Console.WriteLine("          📝 Reservation Receipt                  ");
             Console.WriteLine(divider);
-            Console.WriteLine($"📅 Date: {reservationDate:MMMM dd, yyyy}");
-            Console.WriteLine($"⏰ Time: {Scheduler.TimeSlots[timeIndex]}");
-            Console.WriteLine($"🍽  Dining Area: {venue.Item1} - {venue.Item2:N2} PHP");
-            Console.WriteLine($"📦 Package: {package.Item1} - {package.Item2:N2} PHP");
-
-            if (extraItems.Count > 0)
+            Console.WriteLine($"📅 Date     : {reservationDate:MMMM dd, yyyy}");
+            Console.WriteLine($"⏰ Time     : {Scheduler.TimeSlots[timeIndex]}");
+            Console.WriteLine($"🍽  Dining : {venue.Item1} - {venue.Item2:N2} PHP");
+            Console.WriteLine($"📦 Package  : {package.Item1} - {package.Item2:N2} PHP");
+            if (extraItems.Any())
             {
                 Console.WriteLine("\n🧾 Extras:");
                 foreach (var kv in extraItems)
                     Console.WriteLine($"• {kv.Key.Name} × {kv.Value} - {kv.Key.Price * kv.Value} PHP");
             }
-
             Console.WriteLine(divider);
-            Console.WriteLine($"💰 Subtotal : {total:N2} PHP");
+            Console.WriteLine($"💰 Subtotal : {subtotal:N2} PHP");
             Console.WriteLine($"💸 Discount : {discount:N2} PHP ({discountDetails})");
             Console.WriteLine($"💰 Tax      : {tax:N2} PHP");
             Console.WriteLine($"💰 Total    : {finalTotal:N2} PHP");
@@ -409,6 +338,22 @@ namespace RestaurantReservation
             Console.WriteLine($"🔖 Reference: {reservation.ReferenceId}");
             Console.WriteLine(divider);
 
+            Console.Write("\n❓ Is all the above information correct? (y/n): ");
+            var confirm = Console.ReadLine().Trim().ToLower();
+            if (confirm != "y")
+            {
+                availabilityManager.MarkSlotAsAvailable(reservationDate, timeIndex);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n⚠ Reservation canceled. Let's start over.");
+                Console.ResetColor();
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
+                MakeReservation();
+                return;
+            }
+
+            reservations.Add(reservation);
+
             double payment = 0;
             while (true)
             {
@@ -417,22 +362,10 @@ namespace RestaurantReservation
                 Console.Write($"{finalTotal:N2}");
                 Console.ResetColor();
                 Console.Write(" PHP\n💳 Enter payment: ");
-
-                try
-                {
-                    payment = Convert.ToDouble(Console.ReadLine());
-                    if (Math.Round(payment, 2) >= Math.Round(finalTotal, 2)) break;
-
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("❌ Payment is less than the amount due.");
-                    Console.ResetColor();
-                }
-                catch
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("❌ Please enter a valid number.");
-                    Console.ResetColor();
-                }
+                if (double.TryParse(Console.ReadLine(), out payment) && Math.Round(payment, 2) >= Math.Round(finalTotal, 2)) break;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("❌ Payment is invalid or less than the amount due.");
+                Console.ResetColor();
             }
             double change = payment - finalTotal;
             Console.ForegroundColor = ConsoleColor.Green;
@@ -442,8 +375,6 @@ namespace RestaurantReservation
             Console.WriteLine("\nPress any key to return...");
             Console.ReadKey();
         }
-
-
         private void SearchReservation()
         {
             Console.Clear();
