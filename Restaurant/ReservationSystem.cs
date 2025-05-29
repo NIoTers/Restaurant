@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System;
+using Restaurant;
 
 namespace RestaurantReservation
 {
@@ -8,13 +9,30 @@ namespace RestaurantReservation
     {
         private MenuManager menuManager = new MenuManager();
         private Scheduler availabilityManager = new Scheduler();
-        private List<Reservation> reservations = new List<Reservation>();
         private DisplayManager displayManager = new DisplayManager();
+        private ReservationSystemDbAdapter dbAdapter = new ReservationSystemDbAdapter();
 
         public ReservationSystem()
         {
+            int seed;
+            using (var db = new ReservationContext())
+            {
+                var seedInfo = db.SeedInfos.FirstOrDefault();
+                if (seedInfo == null)
+                {
+                    seed = new Random().Next();
+                    db.SeedInfos.Add(new SeedInfo { Seed = seed });
+                    db.SaveChanges();
+                }
+                else
+                {
+                    seed = seedInfo.Seed;
+                }
+            }
             availabilityManager.InitializeAvailability(DateTime.Today, new DateTime(2026, 6, 30));
-            availabilityManager.RandomizeReservations(DateTime.Today, new DateTime(2026, 6, 30));
+            availabilityManager.RandomizeReservations(DateTime.Today, new DateTime(2026, 6, 30), seed);
+            var allReservations = dbAdapter.LoadReservations();
+            availabilityManager.MarkReservedSlotsFromDb(allReservations);
         }
 
         public void Run()
@@ -68,7 +86,7 @@ namespace RestaurantReservation
                 if (!string.IsNullOrWhiteSpace(contact) && contact.Length >= 7 && contact.All(char.IsDigit)) break;
                 displayManager.ShowError("Contact must be at least 7 digits and digits only.");
             }
-            int existing = reservations.Count(r =>
+            int existing = dbAdapter.LoadReservations().Count(r =>
                 r.Contact == contact && r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (existing >= 5)
             {
@@ -169,7 +187,18 @@ namespace RestaurantReservation
             }
             availabilityManager.MarkSlotAsFull(reservationDate, timeIndex);
             var package = menuManager.SelectPackage();
-            var venue = menuManager.SelectDiningArea();
+            displayManager.ClearConsole();
+            string diningArea;
+            if (package.Item1.Contains("VIP"))
+            {
+                diningArea = "Near Performer";
+                displayManager.ShowMessage("Dining area automatically set to Near Performer for VIP packages.");
+                displayManager.PressAnyKey();
+            }
+            else
+            {
+                diningArea = menuManager.SelectDiningArea(new[] { "Al Fresco", "Dine-In" });
+            }
             var extraItems = new Dictionary<MenuItem, int>();
             int extraTotal = 0;
             displayManager.ClearConsole();
@@ -241,8 +270,7 @@ namespace RestaurantReservation
                 ReferenceId = "RES-" + new Random().Next(1000, 9999),
                 PackageName = package.Item1,
                 PackagePrice = package.Item2,
-                DiningArea = venue.Item1,
-                DiningPrice = venue.Item2,
+                DiningArea = diningArea,
                 ExtraItems = extraItems.SelectMany(kv => Enumerable.Repeat(kv.Key, kv.Value)).ToList(),
                 ExtraTotal = extraTotal,
                 MonthIndex = reservationDate.Month - 1,
@@ -314,7 +342,7 @@ namespace RestaurantReservation
                     }
                 }
             }
-            double subtotal = package.Item2 + venue.Item2 + extraTotal;
+            double subtotal = package.Item2 + extraTotal;
             double totalWithDiscount = subtotal - discount;
             double tax = totalWithDiscount * 0.12;
             double reservationFee = 500;
@@ -325,7 +353,7 @@ namespace RestaurantReservation
             while (true)
             {
                 displayManager.ClearConsole();
-                displayManager.ShowReservationPreview(reservation, reservationDate, package, venue);
+                displayManager.ShowReservationPreview(reservation, reservationDate, package, diningArea);
                 string previewConfirm = Console.ReadLine().Trim().ToLower();
                 if (previewConfirm == "y")
                 {
@@ -345,7 +373,7 @@ namespace RestaurantReservation
             }
             while (true)
             {
-                displayManager.ShowReservationReceipt(reservation, reservationDate, package, venue, subtotal, discount, discountDetails, tax, finalTotal, reservationFee);
+                displayManager.ShowReservationReceipt(reservation, reservationDate, package, diningArea, subtotal, discount, discountDetails, tax, finalTotal, reservationFee);
                 string confirm = Console.ReadLine().Trim().ToLower();
                 if (confirm == "y")
                 {
@@ -364,8 +392,8 @@ namespace RestaurantReservation
                     displayManager.PressAnyKey();
                 }
             }
-            displayManager.ShowReservationReceiptForPayment(reservation, reservationDate, package, venue, subtotal, discount, discountDetails, tax, finalTotal, reservationFee);
-            reservations.Add(reservation);
+            displayManager.ShowReservationReceiptForPayment(reservation, reservationDate, package, diningArea, subtotal, discount, discountDetails, tax, finalTotal, reservationFee);
+            dbAdapter.SaveReservation(reservation);
             double payment = 0;
             while (true)
             {
@@ -401,7 +429,8 @@ namespace RestaurantReservation
                 displayManager.ShowPressAnyKey();
                 return;
             }
-            var results = reservations.Where(r =>
+            var allReservations = dbAdapter.LoadReservations();
+            var results = allReservations.Where(r =>
                 (selected == 0 && r.ReferenceId.Equals(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
                 (selected == 1 && r.Name.Equals(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
                 (selected == 2 && r.Contact.Equals(searchTerm))
@@ -409,24 +438,12 @@ namespace RestaurantReservation
             displayManager.ShowSearchResults(results);
         }
 
-        private string GetDiscountDetails(double discountAmount, double packagePrice, int guests)
-        {
-            double perPersonCost = packagePrice / (guests + 1);
-            if (Math.Abs(discountAmount - (0.20 * perPersonCost)) < 0.01)
-                return "PWD Discount - 20% Off";
-            if (Math.Abs(discountAmount - (0.50 * perPersonCost)) < 0.01)
-                return "Child Discount - 50% Off";
-            if (Math.Abs(discountAmount - perPersonCost) < 0.01)
-                return "Infant Discount - 100% Off";
-            return "Custom Discount";
-        }
-
         private void CancelReservation()
         {
             displayManager.ShowCancelReservationHeader();
             displayManager.PromptBookingId();
             string bookingId = Console.ReadLine();
-            var foundReservation = reservations.FirstOrDefault(r => r.ReferenceId == bookingId);
+            var foundReservation = dbAdapter.LoadReservations().FirstOrDefault(r => r.ReferenceId == bookingId);
             if (foundReservation != null)
             {
                 DateTime reservationDate = new DateTime(foundReservation.Year, foundReservation.MonthIndex + 1, foundReservation.Day);
@@ -445,7 +462,7 @@ namespace RestaurantReservation
                     {
                         double cancellationFee = 500.0;
                         double refundAmount = foundReservation.FinalTotal - cancellationFee;
-                        reservations.Remove(foundReservation);
+                        dbAdapter.RemoveReservation(bookingId);
                         availabilityManager.MarkSlotAsAvailable(reservationDate, foundReservation.TimeIndex);
                         displayManager.ShowCancellationComplete(cancellationFee, refundAmount);
                         break;

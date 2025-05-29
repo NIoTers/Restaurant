@@ -104,9 +104,9 @@ namespace RestaurantReservation
             });
             DiningAreas.AddRange(new[]
             {
-                new DiningArea("Al Fresco", 3000),
-                new DiningArea("Near Performer", 4000),
-                new DiningArea("Dine-In", 2000)
+                new DiningArea("Al Fresco"),
+                new DiningArea("Near Performer"),
+                new DiningArea("Dine-In")
             });
         }
     }

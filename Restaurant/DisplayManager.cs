@@ -142,7 +142,7 @@ namespace RestaurantReservation
             Console.Write("Select discount (1/2/3): ");
         }
 
-        public void ShowReservationPreview(Reservation reservation, DateTime reservationDate, Tuple<string, int> package, Tuple<string, int> venue)
+        public void ShowReservationPreview(Reservation reservation, DateTime reservationDate, Tuple<string, int> package, String diningArea)
         {
             
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -156,7 +156,7 @@ namespace RestaurantReservation
             Console.WriteLine($"👥 Guests             : {reservation.Guests}");
             Console.WriteLine($"📅 Date               : {reservationDate:MMMM dd, yyyy}");
             Console.WriteLine($"⏰ Time               : {Scheduler.TimeSlots[reservation.TimeIndex]}");
-            Console.WriteLine($"🍽  Dining Area        : {venue.Item1} - {venue.Item2:N2} PHP");
+            Console.WriteLine($"🍽  Dining Area        : {diningArea}");
             Console.WriteLine($"📦 Package            : {package.Item1} - {package.Item2:N2} PHP");
             if (reservation.ExtraItems.Any())
             {
@@ -169,7 +169,7 @@ namespace RestaurantReservation
             Console.Write("❓ Is the information correct? (y/n): ");
         }
 
-        public void ShowReservationReceipt(Reservation reservation, DateTime reservationDate, Tuple<string, int> package, Tuple<string, int> venue, double subtotal, double discount, string discountDetails, double tax, double finalTotal, double reservationFee)
+        public void ShowReservationReceipt(Reservation reservation, DateTime reservationDate, Tuple<string, int> package, String diningArea, double subtotal, double discount, string discountDetails, double tax, double finalTotal, double reservationFee)
         {
             ClearConsole();
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -179,7 +179,7 @@ namespace RestaurantReservation
             Console.ResetColor();
             Console.WriteLine($"📅 Date               : {reservationDate:MMMM dd, yyyy}");
             Console.WriteLine($"⏰ Time               : {Scheduler.TimeSlots[reservation.TimeIndex]}");
-            Console.WriteLine($"🍽  Dining Area        : {venue.Item1} - {venue.Item2:N2} PHP");
+            Console.WriteLine($"🍽  Dining Area        : {diningArea}");
             Console.WriteLine($"📦 Package            : {package.Item1} - {package.Item2:N2} PHP");
             if (reservation.ExtraItems.Any())
             {
@@ -211,7 +211,7 @@ namespace RestaurantReservation
             Console.Write("\nAccept and proceed? (y/n): ");
         }
 
-        public void ShowReservationReceiptForPayment(Reservation reservation, DateTime reservationDate, Tuple<string, int> package, Tuple<string, int> venue, double subtotal, double discount, string discountDetails, double tax, double finalTotal, double reservationFee)
+        public void ShowReservationReceiptForPayment(Reservation reservation, DateTime reservationDate, Tuple<string, int> package, String diningArea, double subtotal, double discount, string discountDetails, double tax, double finalTotal, double reservationFee)
         {
             ClearConsole();
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -221,7 +221,7 @@ namespace RestaurantReservation
             Console.ResetColor();
             Console.WriteLine($"📅 Date               : {reservationDate:MMMM dd, yyyy}");
             Console.WriteLine($"⏰ Time               : {Scheduler.TimeSlots[reservation.TimeIndex]}");
-            Console.WriteLine($"🍽  Dining Area        : {venue.Item1} - {venue.Item2:N2} PHP");
+            Console.WriteLine($"🍽  Dining Area        : {diningArea}");
             Console.WriteLine($"📦 Package            : {package.Item1} - {package.Item2:N2} PHP");
             if (reservation.ExtraItems.Any())
             {
@@ -301,7 +301,7 @@ namespace RestaurantReservation
                 {
                     var date = new DateTime(r.Year, r.MonthIndex + 1, r.Day);
                     double extrasTotal = r.ExtraItems.Sum(e => e.Price);
-                    double subtotal = r.PackagePrice + r.DiningPrice + extrasTotal;
+                    double subtotal = r.PackagePrice + extrasTotal;
                     double discount = r.DiscountAmount;
                     string discountDetails = (discount > 0) ? GetDiscountDetails(discount, r.PackagePrice, r.Guests) : "No discount applied";
                     double tax = r.TaxAmount;
@@ -315,7 +315,7 @@ namespace RestaurantReservation
                     Console.ResetColor();
                     Console.WriteLine($"📅 Date        : {date:MMMM dd, yyyy}");
                     Console.WriteLine($"⏰ Time        : {Scheduler.TimeSlots[r.TimeIndex]}");
-                    Console.WriteLine($"🍽  Dining Area : {r.DiningArea} - {r.DiningPrice:N2} PHP");
+                    Console.WriteLine($"🍽  Dining Area : {r.DiningArea} PHP");
                     Console.WriteLine($"📦 Package     : {r.PackageName} - {r.PackagePrice:N2} PHP");
                     if (r.ExtraItems.Any())
                     {
@@ -432,6 +432,13 @@ namespace RestaurantReservation
         public void ShowExitMessage()
         {
             Console.WriteLine("👋 Exiting... Have a great day!");
+        }
+
+        public void ShowMessage(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(message);
+            Console.ResetColor();
         }
 
         public void ShowInvalidInputError()

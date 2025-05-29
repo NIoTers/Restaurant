@@ -12,7 +12,5 @@
             Category = category;
             Price = price;
         }
-
-        
     }
 }

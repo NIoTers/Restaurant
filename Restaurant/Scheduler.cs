@@ -69,9 +69,9 @@ namespace RestaurantReservation
         }
 
 
-        public void RandomizeReservations(DateTime start, DateTime end)
+        public void RandomizeReservations(DateTime start, DateTime end,int seed)
         {
-            Random rand = new Random();
+            Random rand = new Random(seed);
             for (var date = start.Date; date <= end.Date; date = date.AddDays(1))
             {
                 if (!availability.ContainsKey(date)) continue;
@@ -120,6 +120,18 @@ namespace RestaurantReservation
             }
 
             Console.ResetColor();
+        }
+
+        public void MarkReservedSlotsFromDb(IEnumerable<Reservation> reservations)
+        {
+            foreach (var r in reservations)
+            {
+                var date = new DateTime(r.Year, r.MonthIndex + 1, r.Day);
+                if (availability.ContainsKey(date))
+                {
+                    availability[date][r.TimeIndex] = BookingStatus.Full;
+                }
+            }
         }
 
     }

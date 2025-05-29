@@ -168,13 +168,10 @@ namespace RestaurantReservation
             }
         }
 
-        public Tuple<string, int> SelectDiningArea()
+        public string SelectDiningArea(string[] allowedAreas)
         {
-            var diningAreaNames = MenuData.DiningAreas
-                .Select(d => d.Name + " - " + d.Price + " PHP").ToArray();
-            int selected = SelectMenu("🍽 Choose your dining area", diningAreaNames);
-            var selectedDiningArea = MenuData.DiningAreas[selected];
-            return new Tuple<string, int>(selectedDiningArea.Name, selectedDiningArea.Price);
+            int selected = SelectMenu("🍽 Choose your dining area", allowedAreas);
+            return allowedAreas[selected];
         }
 
         public List<MenuItem> GetAllIndividualItems()
