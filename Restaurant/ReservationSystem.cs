@@ -315,15 +315,15 @@ namespace RestaurantReservation
                         switch (discountChoice)
                         {
                             case "1":
-                                discount = 0.20d * (package.Item2 / (guests + 1));
+                                discount = 0.20d * (package.Item2 / (guests));
                                 discountDetails = "PWD Discount - 20% Off";
                                 break;
                             case "2":
-                                discount = 0.50d * (package.Item2 / (guests + 1));
+                                discount = 0.50d * (package.Item2 / (guests));
                                 discountDetails = "Child Discount - 50% Off";
                                 break;
                             case "3":
-                                discount = package.Item2 / (guests + 1);
+                                discount = package.Item2 / (guests);
                                 discountDetails = "Infant Discount - 100% Off";
                                 break;
                             default:

@@ -229,7 +229,7 @@ namespace RestaurantReservation
                 var grouped = reservation.ExtraItems.GroupBy(i => i.Name);
                 foreach (var g in grouped)
                     Console.WriteLine($"• {g.Key} × {g.Count()} - {g.First().Price * g.Count():N2} PHP");
-            }
+            }       
             Console.WriteLine(smallDivider);
             Console.WriteLine($"💰 Subtotal           : {subtotal:N2} PHP");
             Console.WriteLine($"💸 Discount           : {discount:N2} PHP ({discountDetails})");
